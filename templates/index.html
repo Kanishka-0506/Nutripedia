@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>NutriPedia</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="{{ url_for('static', filename='styles.css') }}" rel="stylesheet">
+  <style>
+    body {
+      background: #f4f4f2;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<header>
+  <nav class="navbar navbar-expand-lg bg-white px-4 py-2 rounded-4 mt-3 mx-3">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">NutriPedia</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navLinks">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse justify-content-end" id="navLinks">
+        <ul class="navbar-nav me-3">
+          <li class="nav-item"><a class="nav-link" href="/about">ABOUT US</a></li>
+          
+        </ul>
+        <a href="/contact" class="btn btn-light border rounded-pill d-flex align-items-center px-3">
+          Contact Us <i class="ms-1">➚</i>
+        </a>
+        <button onclick="toggleTheme()" class="btn toggle" id="toggle">🌞</button>
+
+      </div>
+    </div>
+  </nav>
+</header>
+<!-- Hero Section -->
+
+<div class="container mt-5 mb-5">
+  <div class="row align-items-center">
+    <div class="col-md-6 hero-text">
+      <h1>Unleashing <span>Nutritional</span> Wisdom</h1>
+      <p class="mt-4">
+        Discover the power of nutrition through nature's bounty. NutriPedia provides an innovative platform to upload images of fruits and vegetables, unveiling their essential properties. Dive deep into the nutrients, health benefits, and potential drawbacks, enhancing your dietary choices with informed insights.
+      </p>
+      <a href="contact.html" class="btn contact-btn mt-4">
+        <i class="bi bi-telephone-fill"></i> Contact Us for More Info <i>➚</i>
+      </a>
+    </div>
+    <div class="col-md-6">
+      <div class="image-box">
+        
+        <div id="carouselExample" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-inner">
+              <div class="carousel-item active">
+                <img src="{{ url_for('static', filename='f1.jpg') }}" class="d-block w-100" alt="Fruit 1">
+              </div>
+              <div class="carousel-item">
+                <img src="{{ url_for('static', filename='f2.jpg') }}" class="d-block w-100" alt="Fruit 2">
+              </div>
+              <div class="carousel-item">
+                <img src="{{ url_for('static', filename='f3.jpg') }}" class="d-block w-100" alt="Fruit 3">
+              </div>
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#carouselExample" data-bs-slide="prev">
+              <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#carouselExample" data-bs-slide="next">
+              <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            </button>
+          </div>
+          
+      </div>
+    </div>
+  </div>
+</div>
+
+<!--Section 1-->
+<div class="outer">
+      <div class="part1">
+          <img src="{{ url_for('static', filename='scan.jpg') }}"  height="500px" style="border-radius: 5px; ">
+      </div>
+  <div class="part2">
+    <br>
+    <h2>Snap, Scan, & Savor the Goodness</h2>
+    <br>
+    <div>
+    <p>Discover the power of nutrition with NutriPedia. Our platform empowers you to make informed choices about your diet, enhancing your wellness and vitality through knowledge.
+      Let us help you understand the profound impact of every bite you take.</p>
+    </div>
+    <a href="/images">
+    <button class="btn-white-green">Take Image Now</button>
+  </a>
+  </div>
+</div>
+
+<section class="nutrition-data">
+  <div class="container">
+    <div class="row align-items-center">
+      <!-- Text Column (50%) -->
+      <div class="col-md-6" id="nutrition-text">
+        <h2>Unveiling the Data Behind Your Plate</h2>
+
+        <div class="data-item">
+          <h3>🔥 Calorific Value</h3>
+          <p>Understand the energy content of your food.</p>
+        </div>
+
+        <div class="data-item">
+          <h3>⚖️ Macronutrient Breakdown</h3>
+          <p>See the balance of carbohydrates, protein, and fat.</p>
+        </div>
+
+        <div class="data-item">
+          <h3>💊 Vitamin and Mineral Content</h3>
+          <p>Discover the essential micronutrients you're getting.</p>
+        </div>
+
+        <div class="data-item">
+          <h3>🌾 Fiber Content</h3>
+          <p>Learn how much fiber contributes to your diet.</p>
+        </div>
+
+        <p class="disclaimer">🔬 We provide scientific accuracy with data sourced from trusted nutritional databases.</p>
+      </div>
+
+      <!-- Image Grid Column (50%) -->
+      <div class="col-md-6 d-flex justify-content-center">
+        <div class="image-grid">
+          <img src="{{ url_for('static', filename='x1.jpg') }}" alt="Image 1">
+          <img src="{{ url_for('static', filename='x2.jpg') }}" alt="Image 2">
+          <img src="{{ url_for('static', filename='x3.jpg') }}" alt="Image 3">
+          <img src="{{ url_for('static', filename='x4.jpg') }}"  alt="Image 4">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="bg-light text-dark pt-5 pb-3 mt-5">
+  <div class="container">
+    <div class="row text-center text-md-start">
+
+      <!-- Logo & About -->
+      <div class="col-md-4 mb-4">
+        <h4 class="text-success">NutriPedia</h4>
+        <p>Your food decoding companion — helping you understand what’s on your plate and how it affects your health.</p>
+      </div>
+
+      <!-- Quick Links -->
+      <div class="col-md-4 mb-4">
+        <h5 class="text-success">Quick Links</h5>
+        <ul class="list-unstyled">
+          <li><a href="/" class="text-dark text-decoration-none">Home</a></li>
+          <li><a href="/contact" class="text-dark text-decoration-none">Contact</a></li>
+        </ul>
+      </div>
+
+      <!-- Contact -->
+      <div class="col-md-4 mb-4">
+        <h5 class="text-success">Contact Us</h5>
+        <p>Email: <a href="mailto:vk@nutripedia.com" class="text-dark text-decoration-none">vk@nutripedia.com</a></p>
+        <p>Phone: +91 98765 43210</p>
+        <p>Location: India</p>
+      </div>
+    </div>
+
+    <hr>
+
+    <div class="text-center">
+      <p class="mb-0">&copy; 2025 NutriPedia. All rights reserved.</p>
+    </div>
+  </div>
+</footer>
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html> 
+
