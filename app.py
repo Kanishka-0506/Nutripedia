@@ -8,7 +8,7 @@ from ultralytics import YOLO
 MODEL_FILES = {
     "yolo11x.pt": "https://huggingface.co/gokusaiyan4096/nutripedia-yolo-models/resolve/main/yolo11x.pt",
     "yolov10l.pt": "https://huggingface.co/gokusaiyan4096/nutripedia-yolo-models/resolve/main/yolov10l.pt",
-    # "yolov8x-oiv7.pt": "https://huggingface.co/gokusaiyan4096/nutripedia-yolo-models/resolve/main/yolov8x-oiv7.pt",
+    "yolov8x-oiv7.pt": "https://huggingface.co/gokusaiyan4096/nutripedia-yolo-models/resolve/main/yolov8x-oiv7.pt",
     "yolov9e.pt": "https://huggingface.co/gokusaiyan4096/nutripedia-yolo-models/resolve/main/yolov9e.pt"
 }
 
@@ -19,6 +19,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 def download_from_hf(url, dest_path):
     print(f"Downloading {url} ...")
     response = requests.get(url, stream=True)
+    print(f"HTTP status code for {url}: {response.status_code}")
     response.raise_for_status()
     with open(dest_path, "wb") as f:
         for chunk in response.iter_content(chunk_size=8192):
@@ -29,12 +30,17 @@ def download_from_hf(url, dest_path):
         head = f.read(200)
         print(f"First 200 bytes of {os.path.basename(dest_path)}: {head}")
     # Print file size
-    print(f"Downloaded file size: {os.path.getsize(dest_path)} bytes")
+    file_size = os.path.getsize(dest_path)
+    print(f"Downloaded file size for {os.path.basename(dest_path)}: {file_size} bytes")
+    # Check for HTML/text error
+    if head.startswith(b'<') or b'html' in head.lower() or head.startswith(b'version'):
+        print(f"WARNING: {os.path.basename(dest_path)} appears to be HTML or text, not a model file!")
 
 for filename, url in MODEL_FILES.items():
     local_path = os.path.join(UPLOAD_DIR, filename)
-    # Download if missing or if file is suspiciously small (<1MB)
+    print(f"Checking {filename} at {local_path} ...")
     if not os.path.exists(local_path) or os.path.getsize(local_path) < 1_000_000:
+        print(f"{filename} not found or too small, downloading...")
         download_from_hf(url, local_path)
     else:
         print(f"{filename} already exists, skipping download.")
@@ -43,6 +49,7 @@ for filename, url in MODEL_FILES.items():
 models = []
 for filename in MODEL_FILES:
     model_path = os.path.join(UPLOAD_DIR, filename)
+    print(f"About to load model: {filename} from {model_path}")
     try:
         models.append(YOLO(model_path))
         print(f"Loaded model: {filename}")
@@ -194,38 +201,48 @@ CORS(app)
 
 @app.route('/')
 def index():
+    print("Rendering index.html")
     return render_template('index.html')
 
 @app.route('/about')
 def about():
+    print("Rendering about.html")
     return render_template('about.html')
 
 @app.route('/contact')
 def contact():
+    print("Rendering contact.html")
     return render_template('contact.html')
 
 @app.route('/contact.html')
 def contact_html():
+    print("Rendering contact.html (duplicate route)")
     return render_template('contact.html')
 
 @app.route('/images')
 def images():
+    print("Rendering images.html")
     return render_template('images.html')
 
 @app.route('/predict', methods=['POST'])
 def predict():
+    print("Received /predict request")
     if 'image' not in request.files:
+        print("No image uploaded")
         return jsonify({'error': 'No image uploaded'}), 400
 
     image_file = request.files['image']
     image_path = os.path.join(UPLOAD_DIR, image_file.filename)
     image_file.save(image_path)
+    print(f"Saved uploaded image to {image_path}")
 
     try:
         # Collect detections from all models
         union_detections = {}
         for model in models:
+            print(f"Running prediction with model: {model}")
             results = model(image_path)
+            print(f"Model results: {results}")
             names = results[0].names
             for box in results[0].boxes:
                 class_id = int(box.cls[0])
@@ -260,14 +277,18 @@ def predict():
             })
 
         response = {'detections': detected_items}
+        print(f"Prediction response: {response}")
 
     except Exception as e:
+        print(f"Error during prediction: {e}")
         return jsonify({'error': str(e)}), 500
     finally:
         if os.path.exists(image_path):
             os.remove(image_path)
+            print(f"Deleted uploaded image {image_path}")
 
     return jsonify(response)
 
 if __name__ == '__main__':
+    print("Starting Flask app")
     app.run(debug=True)
