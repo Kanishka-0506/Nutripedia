@@ -4,52 +4,36 @@ import os
 import requests
 from ultralytics import YOLO
 
-# --------- Google Drive Download Utility ---------
-def download_from_google_drive(file_id, dest_path):
-    """Download a file from Google Drive by file ID."""
-    URL = "https://docs.google.com/uc?export=download"
-    session = requests.Session()
-    response = session.get(URL, params={'id': file_id}, stream=True)
-    token = get_confirm_token(response)
-    if token:
-        params = {'id': file_id, 'confirm': token}
-        response = session.get(URL, params=params, stream=True)
-    save_response_content(response, dest_path)
-
-def get_confirm_token(response):
-    for key, value in response.cookies.items():
-        if key.startswith('download_warning'):
-            return value
-    return None
-
-def save_response_content(response, destination, chunk_size=32768):
-    with open(destination, "wb") as f:
-        for chunk in response.iter_content(chunk_size):
-            if chunk:
-                f.write(chunk)
-
-# --------- Model File IDs from Google Drive ---------
+# --------- Hugging Face Model Download Links ---------
 MODEL_FILES = {
-    "yolov8x-oiv7.pt": "1JSGv4ZsU4AqJ0P4FGf33eV0q6Zzc9RxG",
-    "yolov9e.pt": "164B9bg73EAD_hhad6EX_6p-CQ0S67asD",
-    "yolo11x.pt": "1Vac8M2L4gW_xV4XdIJXfsUuCzPUCx-JD",
-    "yolov10l.pt": "1JSGv4ZsU4AqJ0P4FGf33eV0q6Zzc9RxG"
+    "yolo11x.pt": "https://huggingface.co/gokusaiyan4096/nutripedia-yolo-models/resolve/main/yolo11x.pt",
+    "yolov10l.pt": "https://huggingface.co/gokusaiyan4096/nutripedia-yolo-models/resolve/main/yolov10l.pt",
+    "yolov8x-oiv7.pt": "https://huggingface.co/gokusaiyan4096/nutripedia-yolo-models/resolve/main/yolov8x-oiv7.pt",
+    "yolov9e.pt": "https://huggingface.co/gokusaiyan4096/nutripedia-yolo-models/resolve/main/yolov9e.pt"
 }
 
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-# --------- Download Models if Not Present ---------
-for filename, file_id in MODEL_FILES.items():
+# --------- Download Models from Hugging Face if Not Present ---------
+def download_from_hf(url, dest_path):
+    print(f"Downloading {url} ...")
+    response = requests.get(url, stream=True)
+    response.raise_for_status()
+    with open(dest_path, "wb") as f:
+        for chunk in response.iter_content(chunk_size=8192):
+            if chunk:
+                f.write(chunk)
+    # Print first 100 bytes for debug
+    with open(dest_path, "rb") as f:
+        head = f.read(100)
+        print(f"First 100 bytes of {os.path.basename(dest_path)}: {head}")
+
+for filename, url in MODEL_FILES.items():
     local_path = os.path.join(UPLOAD_DIR, filename)
     # Download if missing or if file is suspiciously small (<1MB)
     if not os.path.exists(local_path) or os.path.getsize(local_path) < 1_000_000:
-        print(f"Downloading {filename} from Google Drive...")
-        download_from_google_drive(file_id, local_path)
-        # Print the first 100 bytes of the downloaded file to check if it's binary or HTML
-        with open(local_path, "rb") as f:
-            head = f.read(100)
-            print(f"First 100 bytes of {filename}:", head)
+        download_from_hf(url, local_path)
     else:
         print(f"{filename} already exists, skipping download.")
 
