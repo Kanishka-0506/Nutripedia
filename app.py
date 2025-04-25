@@ -30,10 +30,10 @@ def save_response_content(response, destination, chunk_size=32768):
 
 # --------- Model File IDs from Google Drive ---------
 MODEL_FILES = {
-    "yolov8x-oiv7.pt": "1JSGv4ZsU4AqJ0P4FGf33eV0q6Zzc9RxG",  # Replace with correct file ID if needed
+    "yolov8x-oiv7.pt": "1JSGv4ZsU4AqJ0P4FGf33eV0q6Zzc9RxG",
     "yolov9e.pt": "164B9bg73EAD_hhad6EX_6p-CQ0S67asD",
     "yolo11x.pt": "1Vac8M2L4gW_xV4XdIJXfsUuCzPUCx-JD",
-    "yolov10l.pt": "1JSGv4ZsU4AqJ0P4FGf33eV0q6Zzc9RxG"  # Replace with correct file ID if needed
+    "yolov10l.pt": "1JSGv4ZsU4AqJ0P4FGf33eV0q6Zzc9RxG"
 }
 
 UPLOAD_DIR = "uploads"
@@ -42,7 +42,8 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 # --------- Download Models if Not Present ---------
 for filename, file_id in MODEL_FILES.items():
     local_path = os.path.join(UPLOAD_DIR, filename)
-    if not os.path.exists(local_path):
+    # Download if missing or if file is suspiciously small (<1MB)
+    if not os.path.exists(local_path) or os.path.getsize(local_path) < 1_000_000:
         print(f"Downloading {filename} from Google Drive...")
         download_from_google_drive(file_id, local_path)
     else:
@@ -52,14 +53,13 @@ for filename, file_id in MODEL_FILES.items():
 models = []
 for filename in MODEL_FILES:
     model_path = os.path.join(UPLOAD_DIR, filename)
-    if os.path.exists(model_path):
-        try:
-            models.append(YOLO(model_path))
-            print(f"Loaded model: {filename}")
-        except Exception as e:
-            print(f"Failed to load model {filename}: {e}")
+    try:
+        models.append(YOLO(model_path))
+        print(f"Loaded model: {filename}")
+    except Exception as e:
+        print(f"Failed to load model {filename}: {e}")
 
-# Nutrition data (add more as needed)
+# --------- Nutrition Data ---------
 calorie_data = {
     'apple': 52, 'avocado': 160, 'banana': 89, 'bean': 347,
     'bitter_gourd': 17, 'bottle_gourd': 14, 'brinjal': 25,
@@ -196,9 +196,7 @@ nutrition_info = {
         'disadvantages': 'High glycemic index; may affect blood sugar.',
         'benefits': 'Aids hydration and supports heart health.'
     }
-
 }
-
 
 # --------- Flask App Setup ---------
 app = Flask(__name__)
