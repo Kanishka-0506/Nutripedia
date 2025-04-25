@@ -8,7 +8,7 @@ from ultralytics import YOLO
 MODEL_FILES = {
     "yolo11x.pt": "https://huggingface.co/gokusaiyan4096/nutripedia-yolo-models/resolve/main/yolo11x.pt",
     "yolov10l.pt": "https://huggingface.co/gokusaiyan4096/nutripedia-yolo-models/resolve/main/yolov10l.pt",
-    "yolov8x-oiv7.pt": "https://huggingface.co/gokusaiyan4096/nutripedia-yolo-models/resolve/main/yolov8x-oiv7.pt",
+    # "yolov8x-oiv7.pt": "https://huggingface.co/gokusaiyan4096/nutripedia-yolo-models/resolve/main/yolov8x-oiv7.pt",
     "yolov9e.pt": "https://huggingface.co/gokusaiyan4096/nutripedia-yolo-models/resolve/main/yolov9e.pt"
 }
 
