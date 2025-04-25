@@ -24,10 +24,12 @@ def download_from_hf(url, dest_path):
         for chunk in response.iter_content(chunk_size=8192):
             if chunk:
                 f.write(chunk)
-    # Print first 100 bytes for debug
+    # Print first 200 bytes for debug
     with open(dest_path, "rb") as f:
-        head = f.read(100)
-        print(f"First 100 bytes of {os.path.basename(dest_path)}: {head}")
+        head = f.read(200)
+        print(f"First 200 bytes of {os.path.basename(dest_path)}: {head}")
+    # Print file size
+    print(f"Downloaded file size: {os.path.getsize(dest_path)} bytes")
 
 for filename, url in MODEL_FILES.items():
     local_path = os.path.join(UPLOAD_DIR, filename)
