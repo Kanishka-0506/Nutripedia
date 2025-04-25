@@ -46,6 +46,10 @@ for filename, file_id in MODEL_FILES.items():
     if not os.path.exists(local_path) or os.path.getsize(local_path) < 1_000_000:
         print(f"Downloading {filename} from Google Drive...")
         download_from_google_drive(file_id, local_path)
+        # Print the first 100 bytes of the downloaded file to check if it's binary or HTML
+        with open(local_path, "rb") as f:
+            head = f.read(100)
+            print(f"First 100 bytes of {filename}:", head)
     else:
         print(f"{filename} already exists, skipping download.")
 
