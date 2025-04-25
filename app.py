@@ -1,18 +1,63 @@
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import os
+import requests
 from ultralytics import YOLO
 
-app = Flask(__name__)
-CORS(app)
+# --------- Google Drive Download Utility ---------
+def download_from_google_drive(file_id, dest_path):
+    """Download a file from Google Drive by file ID."""
+    URL = "https://docs.google.com/uc?export=download"
+    session = requests.Session()
+    response = session.get(URL, params={'id': file_id}, stream=True)
+    token = get_confirm_token(response)
+    if token:
+        params = {'id': file_id, 'confirm': token}
+        response = session.get(URL, params=params, stream=True)
+    save_response_content(response, dest_path)
 
-# Load all models
-models = [
-    YOLO('uploads/yolov8x-oiv7.pt'),
-    YOLO('uploads/yolov9e.pt'),
-    YOLO('uploads/yolo11x.pt'),
-    YOLO('uploads/yolov10l.pt') # When available
-]
+def get_confirm_token(response):
+    for key, value in response.cookies.items():
+        if key.startswith('download_warning'):
+            return value
+    return None
+
+def save_response_content(response, destination, chunk_size=32768):
+    with open(destination, "wb") as f:
+        for chunk in response.iter_content(chunk_size):
+            if chunk:
+                f.write(chunk)
+
+# --------- Model File IDs from Google Drive ---------
+MODEL_FILES = {
+    "yolov8x-oiv7.pt": "1JSGv4ZsU4AqJ0P4FGf33eV0q6Zzc9RxG",  # Replace with correct file ID if needed
+    "yolov9e.pt": "164B9bg73EAD_hhad6EX_6p-CQ0S67asD",
+    "yolo11x.pt": "1Vac8M2L4gW_xV4XdIJXfsUuCzPUCx-JD",
+    "yolov10l.pt": "1JSGv4ZsU4AqJ0P4FGf33eV0q6Zzc9RxG"  # Replace with correct file ID if needed
+}
+
+UPLOAD_DIR = "uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+# --------- Download Models if Not Present ---------
+for filename, file_id in MODEL_FILES.items():
+    local_path = os.path.join(UPLOAD_DIR, filename)
+    if not os.path.exists(local_path):
+        print(f"Downloading {filename} from Google Drive...")
+        download_from_google_drive(file_id, local_path)
+    else:
+        print(f"{filename} already exists, skipping download.")
+
+# --------- Load YOLO Models ---------
+models = []
+for filename in MODEL_FILES:
+    model_path = os.path.join(UPLOAD_DIR, filename)
+    if os.path.exists(model_path):
+        try:
+            models.append(YOLO(model_path))
+            print(f"Loaded model: {filename}")
+        except Exception as e:
+            print(f"Failed to load model {filename}: {e}")
 
 # Nutrition data (add more as needed)
 calorie_data = {
@@ -155,6 +200,10 @@ nutrition_info = {
 }
 
 
+# --------- Flask App Setup ---------
+app = Flask(__name__)
+CORS(app)
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -181,9 +230,7 @@ def predict():
         return jsonify({'error': 'No image uploaded'}), 400
 
     image_file = request.files['image']
-    upload_dir = 'uploads'
-    os.makedirs(upload_dir, exist_ok=True)
-    image_path = os.path.join(upload_dir, image_file.filename)
+    image_path = os.path.join(UPLOAD_DIR, image_file.filename)
     image_file.save(image_path)
 
     try:
@@ -236,4 +283,3 @@ def predict():
 
 if __name__ == '__main__':
     app.run(debug=True)
-
