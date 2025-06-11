@@ -1,35 +1,19 @@
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import os
-import gdown
 from ultralytics import YOLO
 
 # --------- Constants ---------
-UPLOAD_DIR = "models"
+UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-# --------- Google Drive File IDs for Models ---------
-MODEL_FILES = {
-    "yolo11x.pt": "1dvKoq8wMc_xqXtDHQX7rnc0n4PTsQOa0",
-    "yolov10l.pt": "1XCN68J8d2C_DbB2F8ak6AOOF7wyfaufO",
-    "yolov8x-oiv7.pt": "1Hz8IVZ8YR47Ly0smoOHkmvnf6g1bB4ee",
-    "yolov9e.pt": "156UHX51YScgFby-m5r1yWH6TqRf-AH6B"
-}
-
-# --------- Function to download from Google Drive ---------
-def download_from_drive(file_id, dest_path):
-    url = f"https://drive.google.com/uc?id={file_id}"
-    print(f"Downloading from: {url}")
-    gdown.download(url, dest_path, quiet=False)
-
-# --------- Download Models if Needed ---------
-for filename, file_id in MODEL_FILES.items():
-    model_path = os.path.join(UPLOAD_DIR, filename)
-    if not os.path.exists(model_path) or os.path.getsize(model_path) < 1_000_000:
-        print(f"{filename} not found or too small, downloading...")
-        download_from_drive(file_id, model_path)
-    else:
-        print(f"{filename} already exists, skipping download.")
+# --------- Model Files (Pre-downloaded) ---------
+MODEL_FILES = [
+    "yolo11x.pt",
+    "yolov10l.pt",
+    "yolov8x-oiv7.pt",
+    "yolov9e.pt"
+]
 
 # --------- Load YOLO Models ---------
 models = []
@@ -42,7 +26,31 @@ for filename in MODEL_FILES:
         print(f"Failed to load model {filename}: {e}")
 
 # --------- Nutrition Data ---------
-# (same calorie_data and nutrition_info dictionaries as your code)
+# Add your `calorie_data` and `nutrition_info` dictionaries here
+calorie_data = {
+    "banana": 89,
+    "apple": 52,
+    "orange": 47
+    # Add more as needed
+}
+
+nutrition_info = {
+    "banana": {
+        "advantages": "Rich in potassium.",
+        "disadvantages": "High in sugar for diabetics.",
+        "benefits": "Supports heart health."
+    },
+    "apple": {
+        "advantages": "High in fiber.",
+        "disadvantages": "May cause bloating in excess.",
+        "benefits": "Helps in weight loss."
+    },
+    "orange": {
+        "advantages": "Vitamin C rich.",
+        "disadvantages": "Can be acidic.",
+        "benefits": "Boosts immunity."
+    }
+}
 
 # --------- Flask Setup ---------
 app = Flask(__name__)
@@ -57,7 +65,6 @@ def about():
     return render_template('about.html')
 
 @app.route('/contact')
-@app.route('/contact.html')
 def contact():
     return render_template('contact.html')
 
@@ -121,11 +128,5 @@ def predict():
 
     return jsonify(response)
 
-# if __name__ == '__main__':
-  #  import os
-   # port=int(os.environ.get("PORT",5000))
-    # app.run(host='0.0.0.0',port=port)
-# Only needed if you want to run locally
 if __name__ == '__main__':
     app.run(debug=True)
-
