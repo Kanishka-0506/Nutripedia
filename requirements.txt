@@ -18,3 +18,4 @@ Flask
 flask_cors
 ultralytics
 gdown
+gunicorn
