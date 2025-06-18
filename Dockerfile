@@ -12,6 +12,7 @@ WORKDIR /app
 # Install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+RUN mkdir -p uploads && chmod 777 uploads
 
 # Copy app files
 COPY . .

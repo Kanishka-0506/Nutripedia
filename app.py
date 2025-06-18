@@ -1,58 +1,79 @@
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import os
+import requests
 from ultralytics import YOLO
 
-# --------- Constants ---------
-UPLOAD_DIR = "uploads"
+# --------- Hugging Face Model Download Links ---------
+MODEL_FILES = {
+    "yolo11x.pt": "https://huggingface.co/gokusaiyan4096/nutripedia-yolo-models/resolve/main/yolo11x.pt",
+    "yolov10l.pt": "https://huggingface.co/gokusaiyan4096/nutripedia-yolo-models/resolve/main/yolov10l.pt",
+    "yolov8x-oiv7.pt": "https://huggingface.co/gokusaiyan4096/nutripedia-yolo-models/resolve/main/yolov8x-oiv7.pt",
+    "yolov9e.pt": "https://huggingface.co/gokusaiyan4096/nutripedia-yolo-models/resolve/main/yolov9e.pt"
+}
+
+UPLOAD_DIR = "/tmp/uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-# --------- Model Files (Pre-downloaded) ---------
-MODEL_FILES = [
-    "yolo11x.pt",
-    "yolov10l.pt",
-    "yolov8x-oiv7.pt",
-    "yolov9e.pt"
-]
+def download_from_hf(url, dest_path):
+    response = requests.get(url, stream=True)
+    response.raise_for_status()
+    with open(dest_path, "wb") as f:
+        for chunk in response.iter_content(chunk_size=8192):
+            f.write(chunk)
+
+for filename, url in MODEL_FILES.items():
+    local_path = os.path.join(UPLOAD_DIR, filename)
+    if not os.path.exists(local_path) or os.path.getsize(local_path) < 1_000_000:
+        download_from_hf(url, local_path)
 
 # --------- Load YOLO Models ---------
 models = []
 for filename in MODEL_FILES:
     model_path = os.path.join(UPLOAD_DIR, filename)
     try:
-        print(f"Loading model: {filename}")
         models.append(YOLO(model_path))
     except Exception as e:
         print(f"Failed to load model {filename}: {e}")
 
-# --------- Nutrition Data ---------
-# Add your `calorie_data` and `nutrition_info` dictionaries here
+# --------- Nutrition and Calorie Data ---------
 calorie_data = {
-    "banana": 89,
     "apple": 52,
-    "orange": 47
-    # Add more as needed
+    "banana": 89,
+    "carrot": 41,
+    "pineapple": 50,
+    "strawberry": 33
 }
 
 nutrition_info = {
-    "banana": {
-        "advantages": "Rich in potassium.",
-        "disadvantages": "High in sugar for diabetics.",
-        "benefits": "Supports heart health."
-    },
     "apple": {
-        "advantages": "High in fiber.",
-        "disadvantages": "May cause bloating in excess.",
-        "benefits": "Helps in weight loss."
+        "advantages": "Rich in fiber and vitamin C",
+        "disadvantages": "May cause digestive issues in excess",
+        "benefits": "Good for heart health"
     },
-    "orange": {
-        "advantages": "Vitamin C rich.",
-        "disadvantages": "Can be acidic.",
-        "benefits": "Boosts immunity."
+    "banana": {
+        "advantages": "Rich in potassium and fiber",
+        "disadvantages": "High in sugar",
+        "benefits": "Good for energy and digestion"
+    },
+    "carrot": {
+        "advantages": "High in beta-carotene and vitamin A",
+        "disadvantages": "Can cause carotenemia in excess",
+        "benefits": "Improves eye health"
+    },
+    "pineapple": {
+        "advantages": "Rich in vitamin C and enzymes",
+        "disadvantages": "Can irritate mouth due to bromelain",
+        "benefits": "Supports immunity and digestion"
+    },
+    "strawberry": {
+        "advantages": "High in antioxidants and vitamin C",
+        "disadvantages": "Can cause allergies in some",
+        "benefits": "Boosts skin health"
     }
 }
 
-# --------- Flask Setup ---------
+# --------- Flask App ---------
 app = Flask(__name__)
 CORS(app)
 
@@ -85,40 +106,52 @@ def predict():
         union_detections = {}
         for model in models:
             results = model(image_path)
-            names = results[0].names
+            names = model.names
+
             for box in results[0].boxes:
+                if not hasattr(box, 'cls') or not hasattr(box, 'conf'):
+                    continue
+
                 class_id = int(box.cls[0])
-                label = names[class_id]
-                norm_label = label.strip().lower().replace(" ", "_")
                 conf = float(box.conf[0])
-                if norm_label in calorie_data:
-                    if norm_label not in union_detections:
-                        union_detections[norm_label] = {
-                            'label': label,
-                            'confidences': [conf],
-                            'count': 1
-                        }
-                    else:
-                        union_detections[norm_label]['confidences'].append(conf)
-                        union_detections[norm_label]['count'] += 1
+                label = names.get(class_id, f"cls_{class_id}")
+                norm_label = label.strip().lower().replace(" ", "_")
+
+                print(f"Detected: {label} ({norm_label}) with confidence {conf:.2f}")
+
+                if norm_label not in union_detections:
+                    union_detections[norm_label] = {
+                        'label': label,
+                        'confidences': [conf],
+                        'count': 1
+                    }
+                else:
+                    union_detections[norm_label]['confidences'].append(conf)
+                    union_detections[norm_label]['count'] += 1
 
         detected_items = []
         for norm_label, info in union_detections.items():
-            cal = calorie_data[norm_label]
+            cal = calorie_data.get(norm_label, None)
             nutri = nutrition_info.get(norm_label, {})
             avg_conf = sum(info['confidences']) / len(info['confidences'])
-            detected_items.append({
+
+            item = {
                 'name': info['label'],
                 'quantity': info['count'],
-                'confidence': f"{avg_conf*100:.1f}%",
-                'calorific_value': f"{cal} kcal per 100g",
+                'confidence': f"{avg_conf * 100:.1f}%",
+                'calorific_value': f"{cal} kcal per 100g" if cal else "Unknown",
                 'advantages': nutri.get('advantages', 'N/A'),
                 'disadvantages': nutri.get('disadvantages', 'N/A'),
                 'benefits': nutri.get('benefits', 'N/A'),
-                'total_calories': f"{cal * info['count']} kcal (estimated total)"
-            })
+                'total_calories': f"{cal * info['count']} kcal (estimated total)" if cal else "Unknown"
+            }
 
-        response = {'detections': detected_items}
+            detected_items.append(item)
+
+        if not detected_items:
+            return jsonify({'message': 'No fruits or vegetables detected.'})
+
+        return jsonify({'detections': detected_items})
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -126,7 +159,5 @@ def predict():
         if os.path.exists(image_path):
             os.remove(image_path)
 
-    return jsonify(response)
-
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 7860)))
