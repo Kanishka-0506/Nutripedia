@@ -163,4 +163,28 @@
     background-color: whitesmoke;
     color: #111;
   }
-  
+  /* Global dark mode styles */
+.dark-mode {
+  background-color: #121212 !important;
+  color: whitesmoke !important;
+}
+
+.dark-mode a {
+  color: #90ee90 !important;
+}
+
+.dark-mode .form-control,
+.dark-mode textarea {
+  background-color: #1e1e1e;
+  color: #fff;
+  border: 1px solid #4CAF50;
+}
+
+.dark-mode footer {
+  background-color: #1a1a1a;
+  color: whitesmoke;
+}
+
+footer, body {
+  transition: background-color 0.4s, color 0.4s;
+}
